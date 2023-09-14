@@ -25,7 +25,15 @@ const (
 	Header = `<?xml version="1.0" encoding="UTF-8"?>` + "\n"
 )
 
-// Marshal returns the XML encoding of v.
+// Marshal returns the XML encoding of v in Canonical XML form [XML-C14N]
+//
+// The package aims to stay interface compatible as a drop in replacement for "encoding/xml".
+// The library aims to marshal data in a Canonical XML form. XML elements are always
+// rendered with a namespace prefix where available.
+// The element attributes and namespace attributes are rendered in alphabetical order
+// as defined in "https://www.w3.org/TR/xml-exc-c14n/".
+// All unit tests from the orginal "encoding/xml" are kept and adapted to match the
+// new encoding style. This keeps a good test coverage.
 //
 // Marshal handles an array or slice by marshaling each of the elements.
 // Marshal handles a pointer by marshaling the value it points at or, if the

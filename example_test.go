@@ -5,9 +5,10 @@
 package xml_test
 
 import (
-	"encoding/xml"
 	"fmt"
 	"os"
+
+	"github.com/m29h/xml"
 )
 
 func ExampleMarshalIndent() {
@@ -15,7 +16,7 @@ func ExampleMarshalIndent() {
 		City, State string
 	}
 	type Person struct {
-		XMLName   xml.Name `xml:"person"`
+		XMLName   xml.Name `xml:"http://example.com/example/ent person"`
 		Id        int      `xml:"id,attr"`
 		FirstName string   `xml:"name>first"`
 		LastName  string   `xml:"name>last"`
@@ -37,17 +38,17 @@ func ExampleMarshalIndent() {
 
 	os.Stdout.Write(output)
 	// Output:
-	//   <person id="13">
-	//       <name>
-	//           <first>John</first>
-	//           <last>Doe</last>
-	//       </name>
-	//       <age>42</age>
-	//       <Married>false</Married>
-	//       <City>Hanga Roa</City>
-	//       <State>Easter Island</State>
+	//   <ent:person xmlns:ent="http://example.com/example/ent" id="13">
+	//       <ent:name>
+	//           <ent:first>John</ent:first>
+	//           <ent:last>Doe</ent:last>
+	//       </ent:name>
+	//       <ent:age>42</ent:age>
+	//       <ent:Married>false</ent:Married>
+	//       <ent:City>Hanga Roa</ent:City>
+	//       <ent:State>Easter Island</ent:State>
 	//       <!-- Need more details. -->
-	//   </person>
+	//   </ent:person>
 }
 
 func ExampleEncoder() {
@@ -113,23 +114,23 @@ func ExampleUnmarshal() {
 	v := Result{Name: "none", Phone: "none"}
 
 	data := `
-		<Person>
-			<FullName>Grace R. Emlin</FullName>
-			<Company>Example Inc.</Company>
-			<Email where="home">
-				<Addr>gre@example.com</Addr>
-			</Email>
-			<Email where='work'>
-				<Addr>gre@work.com</Addr>
-			</Email>
-			<Group>
-				<Value>Friends</Value>
-				<Value>Squash</Value>
-			</Group>
-			<City>Hanga Roa</City>
-			<State>Easter Island</State>
-		</Person>
-	`
+        <Person>
+            <FullName>Grace R. Emlin</FullName>
+            <Company>Example Inc.</Company>
+            <Email where="home">
+                <Addr>gre@example.com</Addr>
+            </Email>
+            <Email where='work'>
+                <Addr>gre@work.com</Addr>
+            </Email>
+            <Group>
+                <Value>Friends</Value>
+                <Value>Squash</Value>
+            </Group>
+            <City>Hanga Roa</City>
+            <State>Easter Island</State>
+        </Person>
+    `
 	err := xml.Unmarshal([]byte(data), &v)
 	if err != nil {
 		fmt.Printf("error: %v", err)

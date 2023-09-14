@@ -46,6 +46,16 @@ type Attr struct {
 	Name  Name
 	Value string
 }
+type attributes ([]Attr)
+
+type BySpace struct{ a *attributes }
+
+func (s BySpace) Len() int      { return len(*s.a) }
+func (s BySpace) Swap(i, j int) { (*s.a)[i], (*s.a)[j] = (*s.a)[j], (*s.a)[i] }
+
+func (s BySpace) Less(i, j int) bool {
+	return (*s.a)[i].Name.Space < (*s.a)[j].Name.Space
+}
 
 // A Token is an interface holding one of the token types:
 // StartElement, EndElement, CharData, Comment, ProcInst, or Directive.

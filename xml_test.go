@@ -944,8 +944,8 @@ func TestEncodeXMLNS(t *testing.T) {
 		ok   bool
 	}{
 		{encodeXMLNS1, `<Test xmlns="http://example.com/ns"><Body>hello world</Body></Test>`, true},
-		{encodeXMLNS2, `<Test><body xmlns="http://example.com/ns">hello world</body></Test>`, true},
-		{encodeXMLNS3, `<Test xmlns="http://example.com/ns"><Body>hello world</Body></Test>`, true},
+		{encodeXMLNS2, `<Test><ns:body xmlns:ns="http://example.com/ns">hello world</ns:body></Test>`, true},
+		{encodeXMLNS3, `<ns:Test xmlns:ns="http://example.com/ns"><ns:Body>hello world</ns:Body></ns:Test>`, true},
 		{encodeXMLNS4, `<Test xmlns="http://example.com/ns"><Body>hello world</Body></Test>`, false},
 	}
 
@@ -1076,7 +1076,7 @@ func TestIssue7113(t *testing.T) {
 
 	var a A
 	structSpace := "b"
-	xmlTest := `<A xmlns="` + structSpace + `"><C xmlns=""></C><d></d></A>`
+	xmlTest := `<` + structSpace + `:A xmlns:` + structSpace + `="` + structSpace + `"><C xmlns=""></C><b:d></b:d></b:A>`
 	t.Log(xmlTest)
 	err := Unmarshal([]byte(xmlTest), &a)
 	if err != nil {

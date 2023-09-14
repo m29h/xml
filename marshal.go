@@ -8,10 +8,12 @@ import (
 	"bufio"
 	"bytes"
 	"encoding"
+
 	"errors"
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -81,6 +83,7 @@ func Marshal(v any) ([]byte, error) {
 	var b bytes.Buffer
 	enc := NewEncoder(&b)
 	if err := enc.Encode(v); err != nil {
+		enc.Close()
 		return nil, err
 	}
 	if err := enc.Close(); err != nil {
@@ -316,20 +319,21 @@ func (enc *Encoder) Close() error {
 }
 
 type printer struct {
-	w          *bufio.Writer
-	encoder    *Encoder
-	seq        int
-	indent     string
-	prefix     string
-	depth      int
-	indentedIn bool
-	putNewline bool
-	attrNS     map[string]string // map prefix -> name space
-	attrPrefix map[string]string // map name space -> prefix
-	prefixes   []string
-	tags       []Name
-	closed     bool
-	err        error
+	w           *bufio.Writer
+	encoder     *Encoder
+	seq         int
+	indent      string
+	prefix      string
+	depth       int
+	indentedIn  bool
+	putNewline  bool
+	attrNS      map[string]string // map prefix -> name space
+	localAttrNS []Attr            // attrNS tags to render in current element
+	attrPrefix  map[string]string // map name space -> prefix
+	prefixes    []string
+	tags        []Name
+	closed      bool
+	err         error
 }
 
 // createAttrPrefix finds the name space prefix attribute to use for the given name space,
@@ -382,11 +386,13 @@ func (p *printer) createAttrPrefix(url string) string {
 	p.attrPrefix[url] = prefix
 	p.attrNS[prefix] = url
 
-	p.WriteString(`xmlns:`)
-	p.WriteString(prefix)
-	p.WriteString(`="`)
-	EscapeText(p, []byte(url))
-	p.WriteString(`" `)
+	p.localAttrNS = append(p.localAttrNS, Attr{Name: Name{Local: "xmlns:" + prefix, Space: "xmlns:" + prefix}, Value: url})
+	/*b := new(bytes.Buffer)
+	b.WriteString(` `)
+	b.WriteString(prefix)
+	b.WriteString(`="`)
+	EscapeText(b, []byte(url))
+	b.WriteString(`"`)*/
 
 	p.prefixes = append(p.prefixes, prefix)
 
@@ -721,30 +727,49 @@ func (p *printer) writeStart(start *StartElement) error {
 		return fmt.Errorf("xml: start tag with no name")
 	}
 
-	p.tags = append(p.tags, start.Name)
 	p.markPrefix()
-
+	p.localAttrNS = make([]Attr, 1)
 	p.writeIndent(1)
 	p.WriteByte('<')
-	p.WriteString(start.Name.Local)
 
-	if start.Name.Space != "" {
-		p.WriteString(` xmlns="`)
-		p.EscapeString(start.Name.Space)
-		p.WriteByte('"')
+	if l := len(p.tags); start.Name.Space == "" && l > 0 {
+		//promote the default namespace of previous element to this tag
+		start.Name.Space = p.tags[l-1].Space
+		for _, a := range start.Attr {
+			if a.Value == "" && a.Name.Local == xmlnsPrefix && a.Name.Space == "" {
+				//override element namespace with explicit empty namespace when given
+				start.Name.Space = ""
+			}
+		}
+
 	}
+	elName := start.Name.Local
+	if start.Name.Space != "" {
+		elName = p.createAttrPrefix(start.Name.Space) + ":" + elName
+	}
+	p.tags = append(p.tags, start.Name)
+	p.WriteString(elName)
+	for i, attr := range start.Attr {
+		name := attr.Name
+		if name.Local == "" {
+			continue
+		}
+		if name.Space != "" {
 
-	// Attributes
-	for _, attr := range start.Attr {
+			pf := p.createAttrPrefix(name.Space)
+			start.Attr[i].Name.Local = pf + ":" + name.Local
+			start.Attr[i].Name.Space = name.Space + name.Local
+		}
+	}
+	a := start.Attr
+	sort.Sort(BySpace{(*attributes)(&a)})
+	sort.Sort(BySpace{(*attributes)(&p.localAttrNS)})
+	for _, attr := range append(p.localAttrNS, a...) {
 		name := attr.Name
 		if name.Local == "" {
 			continue
 		}
 		p.WriteByte(' ')
-		if name.Space != "" {
-			p.WriteString(p.createAttrPrefix(name.Space))
-			p.WriteByte(':')
-		}
 		p.WriteString(name.Local)
 		p.WriteString(`="`)
 		p.EscapeString(attr.Value)
@@ -768,11 +793,14 @@ func (p *printer) writeEnd(name Name) error {
 		return fmt.Errorf("xml: end tag </%s> in namespace %s does not match start tag <%s> in namespace %s", name.Local, name.Space, top.Local, top.Space)
 	}
 	p.tags = p.tags[:len(p.tags)-1]
-
+	elName := name.Local
+	if name.Space != "" {
+		elName = p.createAttrPrefix(name.Space) + ":" + elName
+	}
 	p.writeIndent(-1)
 	p.WriteByte('<')
 	p.WriteByte('/')
-	p.WriteString(name.Local)
+	p.WriteString(elName)
 	p.WriteByte('>')
 	p.popPrefix()
 	return nil
@@ -1073,7 +1101,10 @@ func (p *printer) writeIndent(depthDelta int) {
 
 type parentStack struct {
 	p     *printer
-	stack []string
+	stack []struct {
+		elName string
+		elRef  *StartElement
+	}
 }
 
 // trim updates the XML context to match the longest common prefix of the stack
@@ -1082,12 +1113,12 @@ type parentStack struct {
 func (s *parentStack) trim(parents []string) error {
 	split := 0
 	for ; split < len(parents) && split < len(s.stack); split++ {
-		if parents[split] != s.stack[split] {
+		if parents[split] != s.stack[split].elName {
 			break
 		}
 	}
 	for i := len(s.stack) - 1; i >= split; i-- {
-		if err := s.p.writeEnd(Name{Local: s.stack[i]}); err != nil {
+		if err := s.p.writeEnd(Name(*&s.stack[i].elRef.Name)); err != nil {
 			return err
 		}
 	}
@@ -1098,11 +1129,16 @@ func (s *parentStack) trim(parents []string) error {
 // push adds parent elements to the stack and writes open tags.
 func (s *parentStack) push(parents []string) error {
 	for i := 0; i < len(parents); i++ {
-		if err := s.p.writeStart(&StartElement{Name: Name{Local: parents[i]}}); err != nil {
+		e := struct {
+			elName string
+			elRef  *StartElement
+		}{parents[i], &StartElement{Name: Name{Local: parents[i]}}}
+		if err := s.p.writeStart(e.elRef); err != nil {
 			return err
 		}
+		s.stack = append(s.stack, e)
 	}
-	s.stack = append(s.stack, parents...)
+
 	return nil
 }
 

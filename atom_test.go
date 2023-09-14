@@ -25,21 +25,7 @@ var atomValue = &Feed{
 	},
 }
 
-var atomXML = `` +
-	`<feed xmlns="http://www.w3.org/2005/Atom" updated="2003-12-13T18:30:02Z">` +
-	`<title>Example Feed</title>` +
-	`<id>urn:uuid:60a76c80-d399-11d9-b93C-0003939e0af6</id>` +
-	`<link href="http://example.org/"></link>` +
-	`<author><name>John Doe</name><uri></uri><email></email></author>` +
-	`<entry>` +
-	`<title>Atom-Powered Robots Run Amok</title>` +
-	`<id>urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a</id>` +
-	`<link href="http://example.org/2003/12/13/atom03"></link>` +
-	`<updated>2003-12-13T18:30:02Z</updated>` +
-	`<author><name></name><uri></uri><email></email></author>` +
-	`<summary>Some text.</summary>` +
-	`</entry>` +
-	`</feed>`
+var atomXML = `<Atom:feed xmlns:Atom="http://www.w3.org/2005/Atom" updated="2003-12-13T18:30:02Z"><Atom:title>Example Feed</Atom:title><Atom:id>urn:uuid:60a76c80-d399-11d9-b93C-0003939e0af6</Atom:id><Atom:link href="http://example.org/"></Atom:link><Atom:author><Atom:name>John Doe</Atom:name><Atom:uri></Atom:uri><Atom:email></Atom:email></Atom:author><Atom:entry><Atom:title>Atom-Powered Robots Run Amok</Atom:title><Atom:id>urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a</Atom:id><Atom:link href="http://example.org/2003/12/13/atom03"></Atom:link><Atom:updated>2003-12-13T18:30:02Z</Atom:updated><Atom:author><Atom:name></Atom:name><Atom:uri></Atom:uri><Atom:email></Atom:email></Atom:author><Atom:summary>Some text.</Atom:summary></Atom:entry></Atom:feed>`
 
 func ParseTime(str string) time.Time {
 	t, err := time.Parse(time.RFC3339, str)

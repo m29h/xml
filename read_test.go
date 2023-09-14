@@ -493,7 +493,7 @@ func TestMarshalNS(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Marshal: %v", err)
 	}
-	want := `<Tables><table xmlns="http://www.w3.org/TR/html4/">hello</table><table xmlns="http://www.w3schools.com/furniture">world</table></Tables>`
+	want := `<Tables><html4:table xmlns:html4="http://www.w3.org/TR/html4/">hello</html4:table><furniture:table xmlns:furniture="http://www.w3schools.com/furniture">world</furniture:table></Tables>`
 	str := string(data)
 	if str != want {
 		t.Errorf("have: %q\nwant: %q\n", str, want)
@@ -610,7 +610,7 @@ func TestMarshalNSAttr(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Marshal: %v", err)
 	}
-	want := `<TableAttrs><TAttr xmlns:html4="http://www.w3.org/TR/html4/" html4:table="hello" xmlns:furniture="http://www.w3schools.com/furniture" furniture:table="world" xml:lang="en_US" xmlns:_xml="http://golang.org/xml/" _xml:other="other1" xmlns:_xmlfoo="http://golang.org/xmlfoo/" _xmlfoo:other="other2" xmlns:json="http://golang.org/json/" json:other="other3" xmlns:json_1="http://golang.org/2/json/" json_1:other="other4"></TAttr></TableAttrs>`
+	want := `<TableAttrs><TAttr xmlns:_xml="http://golang.org/xml/" xmlns:_xmlfoo="http://golang.org/xmlfoo/" xmlns:furniture="http://www.w3schools.com/furniture" xmlns:html4="http://www.w3.org/TR/html4/" xmlns:json="http://golang.org/json/" xmlns:json_1="http://golang.org/2/json/" json_1:other="other4" json:other="other3" _xml:other="other1" _xmlfoo:other="other2" html4:table="hello" xml:lang="en_US" furniture:table="world"></TAttr></TableAttrs>`
 	str := string(data)
 	if str != want {
 		t.Errorf("Marshal:\nhave: %#q\nwant: %#q\n", str, want)

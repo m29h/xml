@@ -380,12 +380,6 @@ func (p *printer) createAttrPrefix(url string) string {
 	p.attrNS[prefix] = url
 
 	p.localAttrNS = append(p.localAttrNS, Attr{Name: Name{Local: "xmlns:" + prefix, Space: "xmlns:" + prefix}, Value: url})
-	/*b := new(bytes.Buffer)
-	b.WriteString(` `)
-	b.WriteString(prefix)
-	b.WriteString(`="`)
-	EscapeText(b, []byte(url))
-	b.WriteString(`"`)*/
 
 	p.prefixes = append(p.prefixes, prefix)
 
@@ -721,7 +715,7 @@ func (p *printer) writeStart(start *StartElement) error {
 	}
 
 	p.markPrefix()
-	p.localAttrNS = make([]Attr, 1)
+	p.localAttrNS = make([]Attr, 0)
 	p.writeIndent(1)
 	p.WriteByte('<')
 

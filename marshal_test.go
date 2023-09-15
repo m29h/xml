@@ -2303,6 +2303,7 @@ var encodeTokenTests = []struct {
 }}
 
 func TestEncodeToken(t *testing.T) {
+	NameSpaceBinding.Clear()
 loop:
 	for i, tt := range encodeTokenTests {
 		var buf strings.Builder

@@ -32,7 +32,7 @@ const (
 // rendered with a namespace prefix where available.
 // The element attributes and namespace attributes are rendered in alphabetical order
 // as defined in "https://www.w3.org/TR/xml-exc-c14n/".
-// All unit tests from the orginal "encoding/xml" are kept and adapted to match the
+// All unit tests from the original "encoding/xml" are kept and adapted to match the
 // new encoding style. This keeps a good test coverage.
 //
 // Marshal handles an array or slice by marshaling each of the elements.
@@ -365,22 +365,7 @@ func (p *printer) createAttrPrefix(url string) string {
 		p.attrNS = make(map[string]string)
 	}
 
-	// Pick a name. We try to use the final element of the path
-	// but fall back to _.
-	prefix := strings.TrimRight(url, "/")
-	if i := strings.LastIndex(prefix, "/"); i >= 0 {
-		prefix = prefix[i+1:]
-	}
-	if prefix == "" || !isName([]byte(prefix)) || strings.Contains(prefix, ":") {
-		prefix = "_"
-	}
-	// xmlanything is reserved and any variant of it regardless of
-	// case should be matched, so:
-	//    (('X'|'x') ('M'|'m') ('L'|'l'))
-	// See Section 2.3 of https://www.w3.org/TR/REC-xml/
-	if len(prefix) >= 3 && strings.EqualFold(prefix[:3], "xml") {
-		prefix = "_" + prefix
-	}
+	prefix := NameSpaceBinding.get(url)
 	if p.attrNS[prefix] != "" {
 		// Name is taken. Find a better one.
 		for p.seq++; ; p.seq++ {
